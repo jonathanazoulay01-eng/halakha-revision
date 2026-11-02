@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hazara Halakha</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=Noto+Rashi+Hebrew:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: une seule carte d'étude centrée, avec une échelle de 6 niveaux au-dessus ; panneau latéral (tiroir sur mobile) pour la table des seifim. */
+:root{
+  --bg:#f3f4f1; --surface:#fbfbf9; --ink:#1d2523; --muted:#5f6b67; --line:#d9ddd6;
+  --accent:#1f5b55; --accent-soft:#e1ece9; --brass:#9a6b1f; --brass-soft:#f3ead8;
+  --good:#2e7d4f; --good-soft:#e2f1e7; --warn:#b4542b; --warn-soft:#f7e5dc;
+  --he:"Frank Ruhl Libre","David Libre","Times New Roman",serif;
+  --rashi:"Noto Rashi Hebrew","Frank Ruhl Libre",serif;
+  --ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a19; --surface:#1b2321; --ink:#e6ebe8; --muted:#9aa8a3; --line:#2e3a37;
+  --accent:#6fb7ad; --accent-soft:#1f3532; --brass:#d6a75a; --brass-soft:#352c1c;
+  --good:#6cc492; --good-soft:#1c3226; --warn:#e48a62; --warn-soft:#3a251c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a19; --surface:#1b2321; --ink:#e6ebe8; --muted:#9aa8a3; --line:#2e3a37;
+  --accent:#6fb7ad; --accent-soft:#1f3532; --brass:#d6a75a; --brass-soft:#352c1c;
+  --good:#6cc492; --good-soft:#1c3226; --warn:#e48a62; --warn-soft:#3a251c; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.5;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-bottom:18px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-inline-end:auto}
+.brand h1{font-family:var(--he);font-weight:700;font-size:26px;margin:0;letter-spacing:.01em}
+.brand span{color:var(--muted);font-size:13px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,.seg button,.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-size:14px;color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent}
+.seg button+button{border-inline-start:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:24px;align-items:start}
+@media (max-width:860px){.layout{grid-template-columns:minmax(0,1fr)}}
+
+/* Table des seifim */
+aside.toc{order:2;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 40px);overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px}
+.toc h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
+.stat{border-radius:8px;padding:6px 8px;background:var(--bg);font-variant-numeric:tabular-nums}
+.stat b{display:block;font-size:18px}
+.stat small{color:var(--muted);font-size:11px}
+.stat.g b{color:var(--good)} .stat.r b{color:var(--warn)}
+.toc ol{list-style:none;margin:0;padding:0;direction:rtl}
+.toc li.seif>div{font-family:var(--he);font-weight:700;font-size:15px;margin:10px 0 2px;color:var(--accent)}
+.toc button.t{display:flex;width:100%;align-items:center;gap:8px;border:0;background:transparent;padding:4px 6px;border-radius:6px;text-align:right;font-family:var(--he);font-size:15px}
+.toc button.t:hover{background:var(--bg)}
+.toc button.t[aria-current="true"]{background:var(--accent-soft)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--line)}
+.dot.known{background:var(--good)} .dot.review{background:var(--warn)}
+@media (max-width:860px){aside.toc{order:0;position:static;max-height:none}aside.toc[data-collapsed="true"] .toc-body{display:none}}
+.toc-toggle{display:none}
+@media (max-width:860px){.toc-toggle{display:inline-block;margin-bottom:8px}}
+
+/* Carte */
+main.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px clamp(16px,3vw,32px) 26px;min-width:0}
+.crumbs{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;color:var(--muted);font-size:13px;margin-bottom:14px}
+.crumbs .he{font-family:var(--he);font-size:16px;color:var(--ink);direction:rtl}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500}
+.pill.known{background:var(--good-soft);color:var(--good)} .pill.review{background:var(--warn-soft);color:var(--warn)} .pill.new{background:var(--bg);color:var(--muted)}
+
+.ladder{display:flex;gap:4px;margin:0 0 20px;direction:rtl}
+.rung{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:3px solid var(--line);padding-top:6px;font-size:12px;color:var(--muted);text-align:center;font-family:var(--he)}
+.rung.on{border-color:var(--accent);color:var(--ink)}
+.rung.skip{opacity:.4;border-top-style:dashed}
+.rung.cur{border-color:var(--brass);color:var(--brass);font-weight:700}
+
+.question{direction:rtl;font-family:var(--he);font-size:clamp(22px,2.6vw,28px);line-height:1.45;font-weight:500;margin:0 0 6px;text-wrap:balance}
+.qtitle{direction:rtl;color:var(--muted);font-family:var(--he);font-size:15px;margin-bottom:18px}
+
+.levels{display:flex;flex-direction:column;gap:14px;direction:rtl}
+.lvl{border-top:1px solid var(--line);padding-top:14px;animation:in .25s ease-out}
+@keyframes in{from{transform:translateY(4px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.lvl{animation:none}}
+.lvl h3{font-family:var(--ui);direction:ltr;text-align:right;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--brass);margin:0 0 8px;font-weight:600}
+.lvl h3 .heb{font-family:var(--he);letter-spacing:0;text-transform:none;font-size:14px;margin-inline-start:6px}
+.ref{font-family:var(--he);font-size:22px;font-weight:700;color:var(--accent)}
+.he-text{font-family:var(--he);font-size:18px;line-height:1.75;max-width:68ch}
+.he-text p{margin:0 0 .55em}
+.gm{background:var(--brass-soft);border-radius:10px;padding:12px 16px}
+.op{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.op:last-child{border-bottom:0}
+.op .who{font-family:var(--rashi);font-weight:600;color:var(--accent);font-size:16px}
+.op .txt{font-family:var(--he);font-size:17.5px;line-height:1.7}
+.psak-block{margin-bottom:10px}
+.psak-block .lab{font-family:var(--he);font-weight:700;font-size:15px;color:var(--ink);background:var(--accent-soft);display:inline-block;padding:1px 10px;border-radius:6px;margin-bottom:4px}
+.psak-block ul{margin:4px 0 0;padding-inline-start:20px}
+.psak-block li{font-family:var(--he);font-size:17.5px;line-height:1.7;margin-bottom:3px}
+.sa{font-family:var(--he);font-size:18.5px;line-height:1.75;border-inline-start:3px solid var(--accent);padding-inline-start:12px}
+.notes{font-family:var(--he);font-size:16.5px;color:var(--muted);font-style:italic}
+.tbl{overflow-x:auto}
+.tbl table{border-collapse:collapse;font-family:var(--he);font-size:15.5px;min-width:520px;width:100%}
+.tbl th,.tbl td{border:1px solid var(--line);padding:6px 9px;text-align:right;vertical-align:top}
+.tbl th{background:var(--bg)}
+
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;align-items:center}
+.btn.primary{background:var(--accent);color:var(--surface);border-color:var(--accent);font-weight:500}
+.btn.good{background:var(--good-soft);color:var(--good);border-color:transparent;font-weight:600}
+.btn.bad{background:var(--warn-soft);color:var(--warn);border-color:transparent;font-weight:600}
+.btn.ghost{background:transparent}
+.spacer{flex:1}
+.kbd{color:var(--muted);font-size:12px}
+.empty{padding:40px 0;text-align:center;color:var(--muted)}
+footer.f{margin-top:20px;color:var(--muted);font-size:12.5px;text-align:center}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>חזרה בהלכה</h1><span>Révision par seif</span></div>
+    <div class="controls">
+      <select id="simanSel" aria-label="Siman"></select>
+      <div class="seg" role="group" aria-label="Mode">
+        <button id="m-order" aria-pressed="true">Dans l'ordre</button>
+        <button id="m-random" aria-pressed="false">Aléatoire</button>
+        <button id="m-review" aria-pressed="false">À revoir</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="toc" id="toc" data-collapsed="true">
+      <button class="btn toc-toggle" id="tocToggle">Afficher les seifim</button>
+      <div class="toc-body">
+        <h2>Progression</h2>
+        <div class="stats">
+          <div class="stat g"><b id="stKnown">0</b><small>Su</small></div>
+          <div class="stat r"><b id="stReview">0</b><small>À revoir</small></div>
+          <div class="stat"><b id="stNew">0</b><small>Pas vus</small></div>
+        </div>
+        <h2>Seifim</h2>
+        <ol id="tocList"></ol>
+        <div style="margin-top:14px"><button class="btn ghost" id="resetBtn">Effacer ma progression</button></div>
+      </div>
+    </aside>
+
+    <main class="card" id="card" aria-live="polite"></main>
+  </div>
+  <footer class="f">Espace : indice suivant · ← → : sujet précédent / suivant · Les réponses sont gardées dans ce navigateur.</footer>
+</div>
+
+<script>
+window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
+</script>
+<script src="data/manifest.js"></script>
+<script>
+(function(){
+  const files = (typeof HALAKHA_FILES !== "undefined") ? HALAKHA_FILES : [];
+  let pending = files.length;
+  if(!pending) start();
+  files.forEach(f=>{
+    const s=document.createElement("script"); s.src=f;
+    s.onload=s.onerror=()=>{ if(--pending===0) start(); };
+    document.body.appendChild(s);
+  });
+
+  const LEVELS = [
+    {k:"q",   fr:"Question",          he:"שאלה"},
+    {k:"ref", fr:"Référence guemara", he:"מראה מקום"},
+    {k:"gm",  fr:"Texte de la guemara", he:"גמרא"},
+    {k:"ri",  fr:"Mahloket rishonim", he:"ראשונים"},
+    {k:"ah",  fr:"Mahloket aharonim", he:"אחרונים"},
+    {k:"ps",  fr:"Psak",              he:"שו״ע · משנ״ב · ביאה״ל · שעה״צ"}
+  ];
+  const PSAK = [["sa","שולחן ערוך"],["rama","רמ״א"],["mb","משנה ברורה"],["bh","ביאור הלכה"],["shtz","שער הציון"]];
+  const KEY="hazara-progress-v1";
+  let progress={};
+  try{ progress=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ progress={}; }
+  const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(progress)); }catch(e){} };
+
+  let siman=null, topics=[], queue=[], pos=0, shown=0, mode="order";
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function has(t,k){
+    if(k==="q") return true;
+    if(k==="ref") return !!(t.gemara&&t.gemara.ref);
+    if(k==="gm") return !!(t.gemara&&t.gemara.text&&t.gemara.text.length);
+    if(k==="ri") return !!(t.rishonim&&t.rishonim.length);
+    if(k==="ah") return !!(t.acharonim&&t.acharonim.length);
+    if(k==="ps") return !!(t.psak&&PSAK.some(([p])=>t.psak[p]&&t.psak[p].length)) || !!t.table || !!(t.notes&&t.notes.length);
+  }
+  const avail=t=>LEVELS.map((l,i)=>i).filter(i=>has(t,LEVELS[i].k));
+
+  function start(){
+    const sel=$("simanSel");
+    if(!HALAKHA.simanim.length){ $("card").innerHTML='<div class="empty">Aucun siman chargé.</div>'; return; }
+    HALAKHA.simanim.sort((a,b)=>(+a.id)-(+b.id));
+    sel.innerHTML=HALAKHA.simanim.map((s,i)=>`<option value="${i}">סימן ${esc(s.siman)} · ${esc(s.title)}</option>`).join("");
+    let last=0; try{ last=+localStorage.getItem(KEY+"-siman")||0; }catch(e){}
+    if(last>=HALAKHA.simanim.length) last=0;
+    sel.value=last;
+    sel.onchange=()=>{ try{localStorage.setItem(KEY+"-siman",sel.value);}catch(e){} loadSiman(+sel.value); };
+    $("m-order").onclick=()=>setMode("order");
+    $("m-random").onclick=()=>setMode("random");
+    $("m-review").onclick=()=>setMode("review");
+    $("tocToggle").onclick=()=>{ const t=$("toc"); const c=t.dataset.collapsed==="true"; t.dataset.collapsed=c?"false":"true"; $("tocToggle").textContent=c?"Masquer les seifim":"Afficher les seifim"; };
+    $("resetBtn").onclick=resetProgress;
+    document.addEventListener("keydown",onKey);
+    loadSiman(last);
+  }
+
+  function loadSiman(i){
+    siman=HALAKHA.simanim[i];
+    topics=[];
+    siman.seifim.forEach((f,fi)=>f.topics.forEach((t,ti)=>topics.push(Object.assign({},t,{_seif:f.seif,_seifTitle:f.title,_key:siman.id+"/"+fi+"/"+ti}))));
+    buildQueue(); pos=0; shown=0; render();
+  }
+  function setMode(m){
+    mode=m; ["order","random","review"].forEach(x=>$("m-"+x).setAttribute("aria-pressed",x===m?"true":"false"));
+    buildQueue(); pos=0; shown=0; render();
+  }
+  function buildQueue(){
+    let idx=topics.map((t,i)=>i);
+    if(mode==="review") idx=idx.filter(i=>progress[topics[i]._key]&&progress[topics[i]._key].s==="review");
+    if(mode==="random"){ for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];} }
+    queue=idx;
+  }
+  function resetProgress(){
+    const b=$("resetBtn");
+    if(b.dataset.confirm!=="1"){ b.dataset.confirm="1"; b.textContent="Confirmer l'effacement"; setTimeout(()=>{b.dataset.confirm="";b.textContent="Effacer ma progression";},4000); return; }
+    topics.forEach(t=>delete progress[t._key]); save(); b.dataset.confirm=""; b.textContent="Effacer ma progression"; buildQueue(); render();
+  }
+
+  function cur(){ return queue.length? topics[queue[pos]] : null; }
+
+  function renderToc(){
+    let k=0,r=0,n=0;
+    topics.forEach(t=>{const p=progress[t._key]; if(!p)n++; else if(p.s==="known")k++; else r++;});
+    $("stKnown").textContent=k; $("stReview").textContent=r; $("stNew").textContent=n;
+    const c=cur();
+    let html="", i=0;
+    siman.seifim.forEach(f=>{
+      html+=`<li class="seif"><div>סעיף ${esc(f.seif)} · ${esc(f.title)}</div><ol>`;
+      f.topics.forEach(()=>{
+        const t=topics[i]; const p=progress[t._key];
+        html+=`<li><button class="t" data-i="${i}" aria-current="${c&&c._key===t._key}"><span class="dot ${p?p.s:""}"></span>${esc(t.title)}</button></li>`;
+        i++;
+      });
+      html+="</ol></li>";
+    });
+    $("tocList").innerHTML=html;
+    $("tocList").querySelectorAll("button.t").forEach(b=>b.onclick=()=>jumpTo(+b.dataset.i));
+  }
+  function jumpTo(ti){
+    let p=queue.indexOf(ti);
+    if(p<0){ setMode("order"); p=queue.indexOf(ti); }
+    pos=p; shown=0; render(); window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  function lvlHtml(t,i){
+    const L=LEVELS[i], head=`<h3>${L.fr}<span class="heb">${L.he}</span></h3>`;
+    if(L.k==="ref") return `<section class="lvl">${head}<div class="ref">${esc(t.gemara.ref)}</div></section>`;
+    if(L.k==="gm") return `<section class="lvl">${head}<div class="he-text gm">${t.gemara.text.map(p=>`<p>${esc(p)}</p>`).join("")}</div></section>`;
+    if(L.k==="ri"||L.k==="ah"){
+      const arr=L.k==="ri"?t.rishonim:t.acharonim;
+      return `<section class="lvl">${head}${arr.map(o=>`<div class="op"><div class="who">${esc(o.who)}</div><div class="txt">${esc(o.text)}</div></div>`).join("")}</section>`;
+    }
+    if(L.k==="ps"){
+      let h="";
+      PSAK.forEach(([k,lab])=>{
+        const a=t.psak&&t.psak[k]; if(!a||!a.length) return;
+        if(k==="sa"||k==="rama") h+=`<div class="psak-block"><span class="lab">${lab}</span>${a.map(x=>`<p class="sa">${esc(x)}</p>`).join("")}</div>`;
+        else h+=`<div class="psak-block"><span class="lab">${lab}</span><ul>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`;
+      });
+      if(t.notes&&t.notes.length) h+=`<div class="psak-block"><span class="lab">הערות</span>${t.notes.map(x=>`<p class="notes">${esc(x)}</p>`).join("")}</div>`;
+      if(t.table) h+=`<div class="psak-block"><span class="lab">סיכום</span><div class="tbl"><table><thead><tr>${t.table.cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${t.table.rows.map(r=>`<tr>${r.map((c,j)=>j===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>`;
+      return `<section class="lvl">${head}${h}</section>`;
+    }
+    return "";
+  }
+
+  function render(){
+    renderToc();
+    const card=$("card"); const t=cur();
+    if(!t){
+      card.innerHTML=`<div class="empty">${mode==="review"?"Rien à revoir pour ce siman. Passez en mode « Dans l'ordre » ou « Aléatoire ».":"Aucun sujet."}</div>`;
+      return;
+    }
+    const av=avail(t); const p=progress[t._key];
+    const revealedIdx=av.slice(1,1+shown);
+    const done=shown>=av.length-1;
+    const status=p?(p.s==="known"?`<span class="pill known">Su${p.h?` · ${p.h} indice${p.h>1?"s":""}`:""}</span>`:`<span class="pill review">À revoir</span>`):`<span class="pill new">Pas encore vu</span>`;
+    const ladder=LEVELS.map((L,i)=>{
+      const cls=!av.includes(i)?"skip":(i===0||revealedIdx.includes(i))?"on":"";
+      const isNext=!done&&av[shown+1]===i;
+      return `<div class="rung ${cls} ${isNext?"cur":""}" title="${L.fr}">${L.he.split(" · ")[0]}</div>`;
+    }).join("");
+    const nextLvl=!done?LEVELS[av[shown+1]]:null;
+    card.innerHTML=`
+      <div class="crumbs"><span class="he">סימן ${esc(siman.siman)} · סעיף ${esc(t._seif)} · ${esc(t._seifTitle)}</span><span>${pos+1} / ${queue.length} ${status}</span></div>
+      <div class="ladder" aria-hidden="true">${ladder}</div>
+      <p class="question">${esc(t.question)}</p>
+      <div class="qtitle">${esc(t.title)}</div>
+      <div class="levels">${revealedIdx.map(i=>lvlHtml(t,i)).join("")}</div>
+      <div class="actions">
+        ${!done?`<button class="btn primary" id="hintBtn">Je ne sais pas · ${nextLvl.fr}</button><button class="btn ghost" id="allBtn">Tout afficher</button>`:""}
+        <span class="spacer"></span>
+        <button class="btn good" id="knewBtn">Je savais</button>
+        <button class="btn bad" id="reviewBtn">À revoir</button>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn ghost" id="prevBtn" ${pos===0?"disabled":""}>← Précédent</button>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="nextBtn" ${pos>=queue.length-1?"disabled":""}>Suivant →</button>
+      </div>`;
+    if(!done){ $("hintBtn").onclick=hint; $("allBtn").onclick=()=>{shown=av.length-1;render();}; }
+    $("knewBtn").onclick=()=>mark("known");
+    $("reviewBtn").onclick=()=>mark("review");
+    $("prevBtn").onclick=()=>go(-1);
+    $("nextBtn").onclick=()=>go(1);
+  }
+  function hint(){ const t=cur(); if(!t) return; const av=avail(t); if(shown<av.length-1){shown++;render(); const l=document.querySelectorAll(".lvl"); if(l.length) l[l.length-1].scrollIntoView({behavior:"smooth",block:"nearest"});} }
+  function mark(s){
+    const t=cur(); if(!t) return;
+    progress[t._key]={s, h:shown, d:Date.now()}; save();
+    if(mode==="review" && s==="known"){ queue.splice(pos,1); if(pos>=queue.length) pos=Math.max(0,queue.length-1); shown=0; render(); return; }
+    go(1,true);
+  }
+  function go(d,auto){
+    const np=pos+d;
+    if(np<0) return;
+    if(np>=queue.length){ if(auto){ shown=0; render(); } return; }
+    pos=np; shown=0; render(); window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function onKey(e){
+    if(e.target.tagName==="SELECT"||e.metaKey||e.ctrlKey) return;
+    if(e.key===" "){ e.preventDefault(); hint(); }
+    else if(e.key==="ArrowRight") go(1);
+    else if(e.key==="ArrowLeft") go(-1);
+  }
+})();
+</script>
+
+</html>
