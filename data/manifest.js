@@ -5,5 +5,7 @@ HALAKHA_FILES = [
   "data/202.js",
   "data/206.js",
   "data/207.js",
-  "data/208.js"
+  "data/208.js",
+  "data/209.js",
+  "data/210.js"
 ];
