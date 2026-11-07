@@ -6,12 +6,13 @@
 <title>Hazara Halakha</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=Noto+Rashi+Hebrew:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: une seule carte d'étude centrée, avec une échelle de 6 niveaux au-dessus ; panneau latéral (tiroir sur mobile) pour la table des seifim. */
 :root{
   --bg:#f3f4f1; --surface:#fbfbf9; --ink:#1d2523; --muted:#5f6b67; --line:#d9ddd6;
   --accent:#1f5b55; --accent-soft:#e1ece9; --brass:#9a6b1f; --brass-soft:#f3ead8;
+  --mk:#d84315; --ri:#1565c0; --ah:#c2185b; --mk-soft:#fbe9e7; --ri-soft:#e3f0fd; --ah-soft:#fce4ec;
   --good:#2e7d4f; --good-soft:#e2f1e7; --warn:#b4542b; --warn-soft:#f7e5dc;
   --he:"Frank Ruhl Libre","David Libre","Times New Roman",serif;
   --rashi:"Noto Rashi Hebrew","Frank Ruhl Libre",serif;
@@ -20,13 +21,16 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#141a19; --surface:#1b2321; --ink:#e6ebe8; --muted:#9aa8a3; --line:#2e3a37;
   --accent:#6fb7ad; --accent-soft:#1f3532; --brass:#d6a75a; --brass-soft:#352c1c;
+  --mk:#ff8a65; --ri:#64b5f6; --ah:#f48fb1; --mk-soft:#3a2219; --ri-soft:#172a3d; --ah-soft:#3a1c27;
   --good:#6cc492; --good-soft:#1c3226; --warn:#e48a62; --warn-soft:#3a251c; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141a19; --surface:#1b2321; --ink:#e6ebe8; --muted:#9aa8a3; --line:#2e3a37;
   --accent:#6fb7ad; --accent-soft:#1f3532; --brass:#d6a75a; --brass-soft:#352c1c;
+  --mk:#ff8a65; --ri:#64b5f6; --ah:#f48fb1; --mk-soft:#3a2219; --ri-soft:#172a3d; --ah-soft:#3a1c27;
   --good:#6cc492; --good-soft:#1c3226; --warn:#e48a62; --warn-soft:#3a251c; color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.5;margin:0}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -87,13 +91,14 @@ main.card{background:var(--surface);border:1px solid var(--line);border-radius:1
 @media (prefers-reduced-motion:reduce){.lvl{animation:none}}
 .lvl h3{font-family:var(--ui);direction:ltr;text-align:right;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--brass);margin:0 0 8px;font-weight:600}
 .lvl h3 .heb{font-family:var(--he);letter-spacing:0;text-transform:none;font-size:14px;margin-inline-start:6px}
-.ref{font-family:var(--he);font-size:22px;font-weight:700;color:var(--accent)}
+.ref{font-family:var(--he);font-size:22px;font-weight:700;color:var(--mk)}
 .he-text{font-family:var(--he);font-size:18px;line-height:1.75;max-width:68ch}
 .he-text p{margin:0 0 .55em}
 .gm{background:var(--brass-soft);border-radius:10px;padding:12px 16px}
 .op{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;padding:8px 0;border-bottom:1px dashed var(--line)}
 .op:last-child{border-bottom:0}
-.op .who{font-family:var(--rashi);font-weight:600;color:var(--accent);font-size:16px}
+.op .who{font-family:var(--he);font-weight:700;color:var(--ri);font-size:18px}
+.op.ah .who{color:var(--ah)}
 .op .txt{font-family:var(--he);font-size:17.5px;line-height:1.7}
 .psak-block{margin-bottom:10px}
 .psak-block .lab{font-family:var(--he);font-weight:700;font-size:15px;color:var(--ink);background:var(--accent-soft);display:inline-block;padding:1px 10px;border-radius:6px;margin-bottom:4px}
@@ -114,15 +119,33 @@ main.card{background:var(--surface);border:1px solid var(--line);border-radius:1
 .spacer{flex:1}
 .kbd{color:var(--muted);font-size:12px}
 .empty{padding:40px 0;text-align:center;color:var(--muted)}
+.ctl-seif{margin-bottom:22px;direction:rtl}
+.ctl-seif>h2{font-family:var(--he);font-size:21px;margin:0 0 10px;color:var(--ink);border-bottom:2px solid var(--line);padding-bottom:4px}
+.ctl-t{padding:10px 0 12px;border-bottom:1px dashed var(--line)}
+.ctl-t:last-child{border-bottom:0}
+.ctl-t h3{font-family:var(--he);font-size:18px;margin:0 0 6px;font-weight:700}
+.ctl-row{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin:5px 0}
+.ctl-lab{font-family:var(--he);font-size:14px;color:var(--muted);min-width:64px}
+.chip{font-family:var(--he);font-size:16.5px;font-weight:700;border:0;border-radius:7px;padding:3px 10px;text-align:right;line-height:1.4}
+.chip.mk{background:var(--mk-soft);color:var(--mk);cursor:default}
+.chip.ri{background:var(--ri-soft);color:var(--ri)}
+.chip.ah{background:var(--ah-soft);color:var(--ah)}
+.chip[aria-expanded="true"]{outline:2px solid currentColor}
+.ctl-op{font-family:var(--he);font-size:17px;line-height:1.7;margin:4px 0 6px;padding:6px 12px;border-inline-start:3px solid var(--line);background:var(--bg);border-radius:6px}
+.ctl-help{color:var(--muted);font-size:13px;margin:0 0 16px}
 footer.f{margin-top:20px;color:var(--muted);font-size:12.5px;text-align:center}
 </style>
 
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>חזרה בהלכה</h1><span>Révision par seif</span></div>
+    <div class="brand"><h1>חזרה בהלכה</h1><span id="brandSub">Révision par seif</span></div>
     <div class="controls">
       <select id="simanSel" aria-label="Siman"></select>
-      <div class="seg" role="group" aria-label="Mode">
+      <div class="seg" role="group" aria-label="Version">
+        <button id="v-rev" aria-pressed="true">Révision</button>
+        <button id="v-ctl" aria-pressed="false">Contrôle</button>
+      </div>
+      <div class="seg" role="group" aria-label="Mode" id="modeSeg">
         <button id="m-order" aria-pressed="true">Dans l'ordre</button>
         <button id="m-random" aria-pressed="false">Aléatoire</button>
         <button id="m-review" aria-pressed="false">À revoir</button>
@@ -180,7 +203,8 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
   try{ progress=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ progress={}; }
   const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(progress)); }catch(e){} };
 
-  let siman=null, topics=[], queue=[], pos=0, shown=0, mode="order";
+  let siman=null, topics=[], queue=[], pos=0, shown=0, mode="order", view="rev";
+  try{ if(localStorage.getItem(KEY+"-view")==="ctl") view="ctl"; }catch(e){}
   const $=id=>document.getElementById(id);
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -203,6 +227,8 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
     if(last>=HALAKHA.simanim.length) last=0;
     sel.value=last;
     sel.onchange=()=>{ try{localStorage.setItem(KEY+"-siman",sel.value);}catch(e){} loadSiman(+sel.value); };
+    $("v-rev").onclick=()=>setView("rev");
+    $("v-ctl").onclick=()=>setView("ctl");
     $("m-order").onclick=()=>setMode("order");
     $("m-random").onclick=()=>setMode("random");
     $("m-review").onclick=()=>setMode("review");
@@ -217,6 +243,35 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
     topics=[];
     siman.seifim.forEach((f,fi)=>f.topics.forEach((t,ti)=>topics.push(Object.assign({},t,{_seif:f.seif,_seifTitle:f.title,_key:siman.id+"/"+fi+"/"+ti}))));
     buildQueue(); pos=0; shown=0; render();
+  }
+  function setView(v){
+    view=v; try{localStorage.setItem(KEY+"-view",v);}catch(e){}
+    render(); window.scrollTo({top:0});
+  }
+  function renderControl(){
+    $("v-rev").setAttribute("aria-pressed","false"); $("v-ctl").setAttribute("aria-pressed","true");
+    $("modeSeg").hidden=true; $("brandSub").textContent="Contrôle des mekorot et des mahloktot";
+    let i=0, html=`<p class="ctl-help">Pour chaque sujet : les mekorot, puis les noms des rishonim et des aharonim. Touchez un nom pour vérifier sa position.</p>`;
+    siman.seifim.forEach(f=>{
+      html+=`<section class="ctl-seif"><h2>סעיף ${esc(f.seif)} · ${esc(f.title)}</h2>`;
+      f.topics.forEach(()=>{
+        const t=topics[i]; const ti=i++;
+        const row=(lab,cls,arr)=>arr&&arr.length?`<div class="ctl-row"><span class="ctl-lab">${lab}</span>${arr.map((o,j)=>`<button class="chip ${cls}" aria-expanded="false" data-op="${cls}-${ti}-${j}">${esc(o.who)}</button>`).join("")}</div><div class="ctl-ops" id="ops-${cls}-${ti}"></div>`:"";
+        html+=`<div class="ctl-t" id="ctl-${ti}"><h3>${esc(t.title)}</h3>`
+          +(t.gemara&&t.gemara.ref?`<div class="ctl-row"><span class="ctl-lab">מקורות</span><span class="chip mk">${esc(t.gemara.ref)}</span></div>`:"")
+          +row("ראשונים","ri",t.rishonim)+row("אחרונים","ah",t.acharonim)
+          +(!(t.gemara&&t.gemara.ref)&&!(t.rishonim&&t.rishonim.length)&&!(t.acharonim&&t.acharonim.length)?`<div class="ctl-row"><span class="ctl-lab">—</span><span class="ctl-lab">פסק בלבד</span></div>`:"")
+          +`</div>`;
+      });
+      html+=`</section>`;
+    });
+    const card=$("card"); card.innerHTML=html;
+    card.querySelectorAll("button.chip").forEach(b=>b.onclick=()=>{
+      const [cls,ti,j]=b.dataset.op.split("-"); const t=topics[+ti]; const o=(cls==="ri"?t.rishonim:t.acharonim)[+j];
+      const box=$("ops-"+cls+"-"+ti); const id="op-"+b.dataset.op; const ex=document.getElementById(id);
+      if(ex){ ex.remove(); b.setAttribute("aria-expanded","false"); return; }
+      const d=document.createElement("div"); d.className="ctl-op"; d.id=id; d.textContent=o.who+" : "+o.text; box.appendChild(d); b.setAttribute("aria-expanded","true");
+    });
   }
   function setMode(m){
     mode=m; ["order","random","review"].forEach(x=>$("m-"+x).setAttribute("aria-pressed",x===m?"true":"false"));
@@ -255,6 +310,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
     $("tocList").querySelectorAll("button.t").forEach(b=>b.onclick=()=>jumpTo(+b.dataset.i));
   }
   function jumpTo(ti){
+    if(view==="ctl"){ const el=document.getElementById("ctl-"+ti); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); return; }
     let p=queue.indexOf(ti);
     if(p<0){ setMode("order"); p=queue.indexOf(ti); }
     pos=p; shown=0; render(); window.scrollTo({top:0,behavior:"smooth"});
@@ -266,7 +322,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
     if(L.k==="gm") return `<section class="lvl">${head}<div class="he-text gm">${t.gemara.text.map(p=>`<p>${esc(p)}</p>`).join("")}</div></section>`;
     if(L.k==="ri"||L.k==="ah"){
       const arr=L.k==="ri"?t.rishonim:t.acharonim;
-      return `<section class="lvl">${head}${arr.map(o=>`<div class="op"><div class="who">${esc(o.who)}</div><div class="txt">${esc(o.text)}</div></div>`).join("")}</section>`;
+      return `<section class="lvl">${head}${arr.map(o=>`<div class="op ${L.k}"><div class="who">${esc(o.who)}</div><div class="txt">${esc(o.text)}</div></div>`).join("")}</section>`;
     }
     if(L.k==="ps"){
       let h="";
@@ -284,6 +340,9 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
 
   function render(){
     renderToc();
+    if(view==="ctl"){ renderControl(); return; }
+    $("v-rev").setAttribute("aria-pressed","true"); $("v-ctl").setAttribute("aria-pressed","false");
+    $("modeSeg").hidden=false; $("brandSub").textContent="Révision par seif";
     const card=$("card"); const t=cur();
     if(!t){
       card.innerHTML=`<div class="empty">${mode==="review"?"Rien à revoir pour ce siman. Passez en mode « Dans l'ordre » ou « Aléatoire ».":"Aucun sujet."}</div>`;
@@ -336,7 +395,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
     pos=np; shown=0; render(); window.scrollTo({top:0,behavior:"smooth"});
   }
   function onKey(e){
-    if(e.target.tagName==="SELECT"||e.metaKey||e.ctrlKey) return;
+    if(e.target.tagName==="SELECT"||e.metaKey||e.ctrlKey||view==="ctl") return;
     if(e.key===" "){ e.preventDefault(); hint(); }
     else if(e.key==="ArrowRight") go(1);
     else if(e.key==="ArrowLeft") go(-1);
