@@ -129,6 +129,9 @@ main.card{background:var(--surface);border:1px solid var(--line);border-radius:1
 .chip{font-family:var(--he);font-size:16.5px;font-weight:700;border:0;border-radius:7px;padding:3px 10px;text-align:right;line-height:1.4}
 .chip.mk{background:var(--mk-soft);color:var(--mk)}
 .ctl-op.gm{background:var(--brass-soft)}
+.chip.ps{background:var(--good-soft);color:var(--good)}
+.ctl-op.psk{border-inline-start-color:var(--good)}
+.ctl-op.psk b{color:var(--good)}
 .chip.ri{background:var(--ri-soft);color:var(--ri)}
 .chip.ah{background:var(--ah-soft);color:var(--ah)}
 .chip[aria-expanded="true"]{outline:2px solid currentColor}
@@ -252,7 +255,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
   function renderControl(){
     $("v-rev").setAttribute("aria-pressed","false"); $("v-ctl").setAttribute("aria-pressed","true");
     $("modeSeg").hidden=true; $("brandSub").textContent="Contrôle des mekorot et des mahloktot";
-    let i=0, html=`<p class="ctl-help">Pour chaque sujet : les mekorot, puis les noms des rishonim et des aharonim. Touchez un nom pour vérifier sa position.</p>`;
+    let i=0, html=`<p class="ctl-help">Pour chaque sujet : les mekorot, les noms des rishonim et des aharonim, et les sources du psak. Touchez un élément pour vérifier son contenu.</p>`;
     siman.seifim.forEach(f=>{
       html+=`<section class="ctl-seif"><h2>סעיף ${esc(f.seif)} · ${esc(f.title)}</h2>`;
       f.topics.forEach(()=>{
@@ -261,7 +264,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
         html+=`<div class="ctl-t" id="ctl-${ti}"><h3>${esc(t.title)}</h3>`
           +(t.gemara&&t.gemara.ref?`<div class="ctl-row"><span class="ctl-lab">מקורות</span><button class="chip mk" aria-expanded="false" data-op="mk-${ti}-0">${esc(t.gemara.ref)}</button></div><div class="ctl-ops" id="ops-mk-${ti}"></div>`:"")
           +row("ראשונים","ri",t.rishonim)+row("אחרונים","ah",t.acharonim)
-          +(!(t.gemara&&t.gemara.ref)&&!(t.rishonim&&t.rishonim.length)&&!(t.acharonim&&t.acharonim.length)?`<div class="ctl-row"><span class="ctl-lab">—</span><span class="ctl-lab">פסק בלבד</span></div>`:"")
+          +(()=>{const ks=PSAK.filter(([k])=>t.psak&&t.psak[k]&&t.psak[k].length); if(t.notes&&t.notes.length) ks.push(["notes","הערות"]); return ks.length?`<div class="ctl-row"><span class="ctl-lab">פסק</span>${ks.map(([k,lab])=>`<button class="chip ps" aria-expanded="false" data-op="ps-${ti}-${k}">${lab}</button>`).join("")}</div><div class="ctl-ops" id="ops-ps-${ti}"></div>`:"";})()
           +`</div>`;
       });
       html+=`</section>`;
@@ -271,7 +274,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
       const [cls,ti,j]=b.dataset.op.split("-"); const t=topics[+ti];
       const box=$("ops-"+cls+"-"+ti); const id="op-"+b.dataset.op; const ex=document.getElementById(id);
       if(ex){ ex.remove(); b.setAttribute("aria-expanded","false"); return; }
-      const d=document.createElement("div"); d.className="ctl-op"; d.id=id; if(cls==="mk"){ (t.gemara.text&&t.gemara.text.length?t.gemara.text:["(אין טקסט גמרא בסיכום)"]).forEach(x=>{const q=document.createElement("p");q.style.margin="0 0 .4em";q.textContent=x;d.appendChild(q);}); d.classList.add("gm"); } else { const o=(cls==="ri"?t.rishonim:t.acharonim)[+j]; d.textContent=o.who+" : "+o.text; } box.appendChild(d); b.setAttribute("aria-expanded","true");
+      const d=document.createElement("div"); d.className="ctl-op"; d.id=id; if(cls==="mk"){ (t.gemara.text&&t.gemara.text.length?t.gemara.text:["(אין טקסט גמרא בסיכום)"]).forEach(x=>{const q=document.createElement("p");q.style.margin="0 0 .4em";q.textContent=x;d.appendChild(q);}); d.classList.add("gm"); } else if(cls==="ps"){ const arr=j==="notes"?t.notes:t.psak[j]; const lab=j==="notes"?"הערות":PSAK.find(x=>x[0]===j)[1]; const h=document.createElement("b"); h.textContent=lab; d.appendChild(h); arr.forEach(x=>{const q=document.createElement("p");q.style.margin=".2em 0 .4em";q.textContent=x;d.appendChild(q);}); d.classList.add("psk"); } else { const o=(cls==="ri"?t.rishonim:t.acharonim)[+j]; d.textContent=o.who+" : "+o.text; } box.appendChild(d); b.setAttribute("aria-expanded","true");
     });
   }
   function setMode(m){
