@@ -137,6 +137,19 @@ main.card{background:var(--surface);border:1px solid var(--line);border-radius:1
 .chip[aria-expanded="true"]{outline:2px solid currentColor}
 .ctl-op{font-family:var(--he);font-size:17px;line-height:1.7;margin:4px 0 6px;padding:6px 12px;border-inline-start:3px solid var(--line);background:var(--bg);border-radius:6px}
 .ctl-help{color:var(--muted);font-size:13px;margin:0 0 16px}
+.ask-form{display:flex;flex-direction:column;gap:10px}
+.ask-form textarea{font:inherit;font-size:17px;min-height:96px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);color:var(--ink);resize:vertical;width:100%}
+.ask-form textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ask-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ask-ans{margin-top:18px;border-top:1px solid var(--line);padding-top:14px;white-space:pre-wrap;font-size:16px;line-height:1.7;unicode-bidi:plaintext}
+.ask-ans:empty{display:none}
+.ask-ans.he,.ask-ans [dir=rtl]{font-family:var(--he);font-size:17.5px}
+.ask-status{color:var(--muted);font-size:13px}
+.ask-src{margin-top:18px;direction:rtl}
+.ask-src h3{font-family:var(--ui);direction:ltr;text-align:right;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--brass);margin:0 0 8px;font-weight:600}
+.ask-src button{display:block;width:100%;text-align:right;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 12px;margin-bottom:6px;font-family:var(--he);font-size:16px}
+.ask-src button small{display:block;color:var(--muted);font-size:13.5px}
+.ask-src button:hover{border-color:var(--accent)}
 footer.f{margin-top:20px;color:var(--muted);font-size:12.5px;text-align:center}
 </style>
 
@@ -148,6 +161,7 @@ footer.f{margin-top:20px;color:var(--muted);font-size:12.5px;text-align:center}
       <div class="seg" role="group" aria-label="Version">
         <button id="v-rev" aria-pressed="true">Révision</button>
         <button id="v-ctl" aria-pressed="false">Contrôle</button>
+        <button id="v-ask" aria-pressed="false">Question</button>
       </div>
       <div class="seg" role="group" aria-label="Mode" id="modeSeg">
         <button id="m-order" aria-pressed="true">Dans l'ordre</button>
@@ -208,7 +222,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
   const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(progress)); }catch(e){} };
 
   let siman=null, topics=[], queue=[], pos=0, shown=0, mode="order", view="rev";
-  try{ if(localStorage.getItem(KEY+"-view")==="ctl") view="ctl"; }catch(e){}
+  try{ {const v=localStorage.getItem(KEY+"-view"); if(v==="ctl"||v==="ask") view=v;} }catch(e){}
   const $=id=>document.getElementById(id);
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -233,6 +247,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
     sel.onchange=()=>{ try{localStorage.setItem(KEY+"-siman",sel.value);}catch(e){} loadSiman(+sel.value); };
     $("v-rev").onclick=()=>setView("rev");
     $("v-ctl").onclick=()=>setView("ctl");
+    $("v-ask").onclick=()=>setView("ask");
     $("m-order").onclick=()=>setMode("order");
     $("m-random").onclick=()=>setMode("random");
     $("m-review").onclick=()=>setMode("review");
@@ -277,6 +292,140 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
       const d=document.createElement("div"); d.className="ctl-op"; d.id=id; if(cls==="mk"){ (t.gemara.text&&t.gemara.text.length?t.gemara.text:["(אין טקסט גמרא בסיכום)"]).forEach(x=>{const q=document.createElement("p");q.style.margin="0 0 .4em";q.textContent=x;d.appendChild(q);}); d.classList.add("gm"); } else if(cls==="ps"){ const arr=j==="notes"?t.notes:t.psak[j]; const lab=j==="notes"?"הערות":PSAK.find(x=>x[0]===j)[1]; const h=document.createElement("b"); h.textContent=lab; d.appendChild(h); arr.forEach(x=>{const q=document.createElement("p");q.style.margin=".2em 0 .4em";q.textContent=x;d.appendChild(q);}); d.classList.add("psk"); } else { const o=(cls==="ri"?t.rishonim:t.acharonim)[+j]; d.textContent=o.who+" : "+o.text; } box.appendChild(d); b.setAttribute("aria-expanded","true");
     });
   }
+
+  /* ---------- Question libre : recherche dans tous les simanim + réponse IA (si disponible) ---------- */
+  let corpus=null, askState={q:"",ans:"",status:"",src:[]}, askCtl=null;
+  const norm=x=>String(x).replace(/[֑-ׇ]/g,"").replace(/[״׳"'`’]/g,"").replace(/[^א-תa-zA-Z0-9À-ſ\s]/g," ").toLowerCase();
+  const STOP=new Set("של את על אם או גם לא כי זה זו הוא היא מה מי כל אך אבל עם יש אין דין האם כמו the de la le les des un une et est que qui pour dans sur en du au".split(" "));
+  function getCorpus(){
+    if(corpus) return corpus;
+    corpus=[];
+    HALAKHA.simanim.forEach((S,si)=>S.seifim.forEach((f,fi)=>f.topics.forEach((t,ti)=>{
+      const parts=[];
+      if(t.gemara&&t.gemara.ref) parts.push("מקור: "+t.gemara.ref);
+      if(t.gemara&&t.gemara.text) parts.push("גמרא: "+t.gemara.text.join(" "));
+      (t.rishonim||[]).forEach(o=>parts.push("ראשונים – "+o.who+": "+o.text));
+      (t.acharonim||[]).forEach(o=>parts.push("אחרונים – "+o.who+": "+o.text));
+      PSAK.forEach(([k,lab])=>{ if(t.psak&&t.psak[k]) t.psak[k].forEach(x=>parts.push(lab+": "+x)); });
+      (t.notes||[]).forEach(x=>parts.push("הערה: "+x));
+      if(t.table) parts.push("טבלה: "+[t.table.cols].concat(t.table.rows).map(r=>r.join(" | ")).join(" / "));
+      const head=`סימן ${S.siman} סעיף ${f.seif} (${f.title}) – ${t.title}`;
+      const body=parts.join("\n");
+      corpus.push({id:S.id+"/"+fi+"/"+ti, si, key:S.id+"/"+fi+"/"+ti, head, title:t.title, question:t.question,
+        text:head+"\nשאלה: "+t.question+"\n"+body, nh:norm(head+" "+t.question), nb:norm(body)});
+    })));
+    return corpus;
+  }
+  function search(q,n){
+    const toks=norm(q).split(/\s+/).filter(w=>w.length>1&&!STOP.has(w));
+    if(!toks.length) return [];
+    const C=getCorpus();
+    const scored=C.map(d=>{
+      let sc=0;
+      toks.forEach(w=>{
+        const vs=[w]; if(/^[ובהלמשכ]/.test(w)&&w.length>3) vs.push(w.slice(1));
+        let best=0;
+        vs.forEach(v=>{ const re=new RegExp(v.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"g");
+          const h=(d.nh.match(re)||[]).length, b=(d.nb.match(re)||[]).length;
+          best=Math.max(best, h*3+Math.min(b,4)); });
+        sc+=best;
+      });
+      return {d,sc};
+    }).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc);
+    return scored.slice(0,n||6).map(x=>x.d);
+  }
+  function openTopic(key){
+    const C=getCorpus(); const d=C.find(x=>x.key===key); if(!d) return;
+    const sel=$("simanSel"); sel.value=d.si; try{localStorage.setItem(KEY+"-siman",sel.value);}catch(e){}
+    view="rev"; try{localStorage.setItem(KEY+"-view","rev");}catch(e){}
+    mode="order"; ["order","random","review"].forEach(x=>$("m-"+x).setAttribute("aria-pressed",x==="order"?"true":"false"));
+    loadSiman(d.si);
+    const ti=topics.findIndex(t=>t._key===key); if(ti>=0) jumpTo(ti);
+  }
+  function fmtAns(txt){
+    return esc(txt).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/^#+\s*/gm,"");
+  }
+  function renderAskOut(){
+    const a=$("askAns"), st=$("askStatus"), src=$("askSrc"); if(!a) return;
+    a.innerHTML=fmtAns(askState.ans);
+    a.classList.toggle("he",/[א-ת]/.test(askState.ans.slice(0,40)));
+    st.textContent=askState.status;
+    src.innerHTML=askState.src.length?`<h3>Sources dans le site · מקורות</h3>`+askState.src.map(d=>`<button data-k="${esc(d.key)}">${esc(d.head)}<small>${esc(d.question)}</small></button>`).join(""):"";
+    src.querySelectorAll("button").forEach(b=>b.onclick=()=>openTopic(b.dataset.k));
+  }
+  function renderAsk(){
+    $("v-rev").setAttribute("aria-pressed","false"); $("v-ctl").setAttribute("aria-pressed","false");
+    $("modeSeg").hidden=true; $("brandSub").textContent="Posez une question sur tous les simanim";
+    const names=HALAKHA.simanim.map(s=>s.siman).join(", ");
+    $("card").innerHTML=`
+      <p class="ctl-help">Posez votre question en français ou en hébreu. La réponse s'appuie uniquement sur le contenu du site (סימנים ${esc(names)}), avec les sujets sources à ouvrir en dessous.</p>
+      <form class="ask-form" id="askForm">
+        <textarea id="askQ" dir="auto" placeholder="Ex. : כוסס חיטה וזית – על מה מברך תחילה?  ·  Quelle brakha sur un poivron farci ?"></textarea>
+        <div class="ask-row"><button class="btn primary" type="submit" id="askBtn">Demander</button><span class="ask-status" id="askStatus"></span></div>
+      </form>
+      <div class="ask-ans" id="askAns" dir="auto"></div>
+      <div class="ask-src" id="askSrc"></div>`;
+    $("askQ").value=askState.q;
+    $("askQ").addEventListener("keydown",e=>{ if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); ask(); } });
+    $("askForm").onsubmit=e=>{ e.preventDefault(); ask(); };
+    renderAskOut();
+  }
+  async function ask(){
+    const q=$("askQ").value.trim(); if(!q) return;
+    if(askCtl) askCtl.abort();
+    askState={q,ans:"",status:"Recherche…",src:search(q,6)}; renderAskOut();
+    let sample=null;
+    try{ sample=(window.claude&&window.claude.use)? await window.claude.use("sample") : null; }catch(e){ sample=null; }
+    if(!sample){
+      askState.status=askState.src.length?"":"Aucun sujet trouvé. Essayez avec les mots hébreux du sujet (ex. : עיקר וטפל, קדימה, מעין שלוש).";
+      if(askState.src.length) askState.ans="La réponse rédigée n'est disponible que dans la version Claude du site. Voici les sujets les plus proches de votre question :";
+      renderAskOut(); return;
+    }
+    const toc=getCorpus().map(d=>`${d.id} | ${d.head}`).join("\n");
+    const ctx=askState.src.map(d=>`[${d.id}]\n${d.text}`).join("\n\n");
+    const prompt=`Tu es un assistant de révision de halakha (Choulhan Aroukh, Orah Haïm, hilkhot brakhot). Réponds à la question de l'élève en t'appuyant UNIQUEMENT sur les fiches de son cours ci-dessous (résumés du livre « שירת הים »). Si les fiches ne contiennent pas la réponse, dis-le clairement au lieu d'inventer.
+
+Règles :
+- Réponds dans la langue de la question (français ou hébreu). Garde les noms des sources et les citations en hébreu.
+- Commence par la réponse pratique (le psak), puis la mahloket : rishonim, aharonim, puis שו״ע / רמ״א / משנ״ב / ביאה״ל / שעה״צ, avec les ס״ק indiqués dans les fiches.
+- Indique entre crochets le sujet utilisé, ex. [סימן רי״ב סעיף א׳ – כשהטפל חביב עליו].
+- Texte simple, pas de tableaux. Tu peux mettre en gras avec **...**. Sois concis.
+- Si les fiches fournies ne suffisent pas, utilise l'outil chercher (mots-clés en hébreu) ou lire_sujet (id du sommaire).
+
+Sommaire de toutes les fiches (id | titre) :
+${toc}
+
+Fiches les plus proches de la question :
+${ctx||"(aucune trouvée par la recherche automatique)"}
+
+Question de l'élève : ${q}`;
+    const used=new Map(askState.src.map(d=>[d.key,d]));
+    const tools=[
+      {name:"chercher",description:"Recherche par mots-clés (de préférence en hébreu) dans toutes les fiches du cours. Renvoie le texte complet des fiches les plus pertinentes.",
+       inputSchema:{type:"object",properties:{requete:{type:"string"}},required:["requete"]},
+       execute:({requete})=>{ const r=search(requete,4); r.forEach(d=>used.set(d.key,d)); return r.length? r.map(d=>`[${d.id}]\n${d.text}`).join("\n\n") : "Aucun résultat."; }},
+      {name:"lire_sujet",description:"Lit le texte complet d'une fiche à partir de son id (ex. 211/3/0) donné dans le sommaire.",
+       inputSchema:{type:"object",properties:{id:{type:"string"}},required:["id"]},
+       execute:({id})=>{ const d=getCorpus().find(x=>x.id===String(id).trim()); if(!d) throw new Error("id inconnu"); used.set(d.key,d); return d.text; }}
+    ];
+    askCtl=new AbortController(); const ctl=askCtl;
+    askState.status="Claude réfléchit…"; renderAskOut();
+    try{
+      const r=await sample(prompt,{tools,cache:false,signal:ctl.signal,
+        onText:({text})=>{ if(ctl!==askCtl) return; askState.ans=text; askState.status="Rédaction…"; renderAskOut(); }});
+      if(ctl!==askCtl) return;
+      askState.ans=r.text; askState.status=r.truncated?"Réponse tronquée.":"";
+      const cited=[...used.values()].filter(d=>r.text.includes(d.title));
+      askState.src=(cited.length?cited:[...used.values()]).slice(0,8);
+    }catch(e){
+      if(ctl!==askCtl) return;
+      if(e&&e.text) askState.ans=e.text;
+      askState.status = e&&e.code==="not_granted" ? "L'accès à Claude a été refusé : seuls les sujets proches sont affichés."
+        : e&&e.code==="rate_limited" ? "Trop de questions d'affilée, réessayez dans un moment."
+        : "La réponse n'a pas pu être obtenue. Les sujets proches sont affichés ci-dessous.";
+    }
+    renderAskOut();
+  }
   function setMode(m){
     mode=m; ["order","random","review"].forEach(x=>$("m-"+x).setAttribute("aria-pressed",x===m?"true":"false"));
     buildQueue(); pos=0; shown=0; render();
@@ -314,6 +463,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
     $("tocList").querySelectorAll("button.t").forEach(b=>b.onclick=()=>jumpTo(+b.dataset.i));
   }
   function jumpTo(ti){
+    if(view==="ask") view="rev";
     if(view==="ctl"){ const el=document.getElementById("ctl-"+ti); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); return; }
     let p=queue.indexOf(ti);
     if(p<0){ setMode("order"); p=queue.indexOf(ti); }
@@ -344,6 +494,8 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
 
   function render(){
     renderToc();
+    $("v-ask").setAttribute("aria-pressed",view==="ask"?"true":"false");
+    if(view==="ask"){ renderAsk(); return; }
     if(view==="ctl"){ renderControl(); return; }
     $("v-rev").setAttribute("aria-pressed","true"); $("v-ctl").setAttribute("aria-pressed","false");
     $("modeSeg").hidden=false; $("brandSub").textContent="Révision par seif";
@@ -399,7 +551,7 @@ window.HALAKHA = { simanim: [], addSiman(s){ this.simanim.push(s); } };
     pos=np; shown=0; render(); window.scrollTo({top:0,behavior:"smooth"});
   }
   function onKey(e){
-    if(e.target.tagName==="SELECT"||e.metaKey||e.ctrlKey||view==="ctl") return;
+    if(e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA"||e.metaKey||e.ctrlKey||view!=="rev") return;
     if(e.key===" "){ e.preventDefault(); hint(); }
     else if(e.key==="ArrowRight") go(1);
     else if(e.key==="ArrowLeft") go(-1);
